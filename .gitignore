@@ -1,0 +1,25 @@
+# Bỏ qua cục data nặng
+Full_Data/
+
+# Bỏ qua mấy cục tạ (weights) train xong
+*.pth
+*.pt
+best_mini_clip.pth
+
+# Mấy file log với file rác lúc chạy code
+benchmark_output.txt
+*.log
+
+# Đống cache tự sinh của Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Môi trường ảo (nếu có)
+venv/
+.venv/
+env/
+
+# File cấu hình của editor (VS Code, PyCharm...)
+.vscode/
+.idea/
