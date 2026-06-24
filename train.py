@@ -1,13 +1,14 @@
+import argparse
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.utils.data import DataLoader, random_split
 from torchvision import transforms
-from transformers import DistilBertTokenizer
+from transformers import DistilBertTokenizer, BertTokenizer, AutoTokenizer
 
 from Data import MiniCLIPDataset
-from models import ImageEncoder, TextEncoder 
+from models import ImageEncoder, TextEncoder, get_encoders, get_checkpoint_name
 
 class MiniCLIP(nn.Module):
     def __init__(self, image_encoder, text_encoder):
@@ -37,12 +38,41 @@ def contrastive_loss(image_features, text_features, logit_scale):
     return (loss_img + loss_txt) / 2
 
 if __name__ == "__main__":
-    tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+    # ============================================================
+    #  Argparse — chọn encoder config từ command line
+    # ============================================================
+    parser = argparse.ArgumentParser(description="Train Mini-CLIP với các encoder khác nhau")
+    parser.add_argument("--image", type=str, default="resnet18", choices=["resnet18", "vit"],
+                        help="Image encoder: resnet18 (default) hoặc vit")
+    parser.add_argument("--text", type=str, default="distilbert", choices=["distilbert", "bert"],
+                        help="Text encoder: distilbert (default) hoặc bert")
+    parser.add_argument("--epochs", type=int, default=100, help="Số epoch (default: 100)")
+    args = parser.parse_args()
+
+    print(f"{'='*50}")
+    print(f"  Config: Image={args.image}, Text={args.text}")
+    print(f"  Epochs: {args.epochs}")
+    print(f"{'='*50}")
+
+    # ============================================================
+    #  Tạo encoder + tokenizer dựa trên config
+    # ============================================================
+    image_encoder, text_encoder, tokenizer_name = get_encoders(args.image, args.text, embed_dim=512)
+    tokenizer = AutoTokenizer.from_pretrained(tokenizer_name)
+    checkpoint_name = get_checkpoint_name(args.image, args.text)
+
+    print(f"Tokenizer: {tokenizer_name}")
+    print(f"Checkpoint sẽ lưu: {checkpoint_name}")
     
+    # ============================================================
+    #  Data — thêm Resize(224, 224)
+    # ============================================================
     transform = transforms.Compose([
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
     ])
+
     train_csv_path = "Full_Data/AIO_conquer-20260619T153349Z-3-001/AIO_conquer/ML_test/train.csv"
     val_csv_path = "Full_Data/AIO_conquer-20260619T153349Z-3-001/AIO_conquer/ML_test/val.csv"
     test_csv_path = "Full_Data/AIO_conquer-20260619T153349Z-3-001/AIO_conquer/ML_test/test.csv"
@@ -61,13 +91,15 @@ if __name__ == "__main__":
     val_dataloader = DataLoader(val_dataset, batch_size=64, shuffle=False, num_workers=4, pin_memory=True, drop_last=True)
     test_dataloader = DataLoader(test_dataset, batch_size=64, shuffle=False, num_workers=4, pin_memory=True, drop_last=True)
     
-    device= torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # ============================================================
+    #  Model + Optimizer
+    # ============================================================
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    image_encoder = ImageEncoder(embed_dim=512).to(device)
-    text_encoder = TextEncoder(embed_dim=512).to(device)
     model = MiniCLIP(image_encoder, text_encoder).to(device)
 
+    # Optimizer — phân biệt lr cho backbone vs projection
     optimizer = optim.Adam([
         {'params': model.image_encoder.backbone.parameters(), 'lr': 1e-5},
         {'params': model.text_encoder.model.parameters(), 'lr': 1e-5},
@@ -78,7 +110,7 @@ if __name__ == "__main__":
 
     model.train()
     
-    epochs = 100
+    epochs = args.epochs
     
     # Các biến dùng để Dừng sớm (tránh lố)
     patience = 5
@@ -139,8 +171,8 @@ if __name__ == "__main__":
         if avg_val_loss < best_val_loss - min_delta:
             best_val_loss = avg_val_loss
             early_stop_counter = 0
-            torch.save(model.state_dict(), "best_mini_clip.pth")
-            print(f"Validation loss improved. Saved best_mini_clip.pth")
+            torch.save(model.state_dict(), checkpoint_name)
+            print(f"Validation loss improved. Saved {checkpoint_name}")
         else:
             early_stop_counter += 1
             print(f"Validation loss did not improve enough. Early Stopping Counter: {early_stop_counter}/{patience}")
@@ -155,7 +187,7 @@ if __name__ == "__main__":
 
     # Chạy thử test xem chất lượng ntn
     print("="*50)
-    model.load_state_dict(torch.load("best_mini_clip.pth"))
+    model.load_state_dict(torch.load(checkpoint_name))
     model.eval() 
     
     test_loss = 0.0
