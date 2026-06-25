@@ -1,17 +1,20 @@
+import os
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision import transforms
-from transformers import DistilBertTokenizer
+from transformers import BertTokenizer
 import matplotlib.pyplot as plt
 import seaborn as sns
 
 from Data import MiniCLIPDataset
-from models import ImageEncoder, TextEncoder
+from models import ImageEncoderViT, TextEncoderBERT
 from train import MiniCLIP
 
 if __name__ == "__main__":
-    tokenizer = DistilBertTokenizer.from_pretrained("distilbert-base-uncased")
+    tokenizer = BertTokenizer.from_pretrained("bert-base-uncased")
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
@@ -30,11 +33,11 @@ if __name__ == "__main__":
     dataset = MiniCLIPDataset(csv_file=csv_path, img_dir=img_dirs, transform=transform)
     dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
     
-    image_encoder = ImageEncoder(embed_dim=512)
-    text_encoder = TextEncoder(embed_dim=512)
+    image_encoder = ImageEncoderViT(embed_dim=512)
+    text_encoder = TextEncoderBERT(embed_dim=512)
     model = MiniCLIP(image_encoder, text_encoder)
     
-    model.load_state_dict(torch.load("best_mini_clip.pth", map_location=device, weights_only=True))
+    model.load_state_dict(torch.load("best_vit_bert.pth", map_location=device, weights_only=True))
     model.to(device)
     model.eval()
     

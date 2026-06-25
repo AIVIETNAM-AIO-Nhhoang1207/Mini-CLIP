@@ -33,6 +33,11 @@ class ImageEncoderViT(nn.Module):
         # ViT-B/16 output 768-dim ở head
         # Thay head bằng Identity để lấy feature thô
         self.backbone.heads = nn.Identity()
+        
+        # [NEW] Đóng băng toàn bộ backbone ViT để máy mát, train cực nhanh!
+        for param in self.backbone.parameters():
+            param.requires_grad = False
+            
         self.projection = nn.Linear(768, embed_dim)
 
     def forward(self, x):
@@ -69,6 +74,11 @@ class TextEncoderBERT(nn.Module):
     def __init__(self, model_name="bert-base-uncased", embed_dim=512):
         super().__init__()
         self.model = BertModel.from_pretrained(model_name)
+        
+        # [NEW] Đóng băng toàn bộ backbone BERT để máy mát!
+        for param in self.model.parameters():
+            param.requires_grad = False
+            
         # BERT-base output 768-dim
         self.projection = nn.Linear(768, embed_dim)
         self.target_token_idx = 0  # CLS token
@@ -88,8 +98,7 @@ class TextEncoderBERT(nn.Module):
 # Danh sách tất cả configs
 ALL_CONFIGS = [
     ("resnet18", "distilbert"),
-    ("vit",      "distilbert"),
-    ("resnet18", "bert"),
+    ("vit",      "bert"),
 ]
 
 
