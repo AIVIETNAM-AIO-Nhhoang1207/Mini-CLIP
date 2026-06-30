@@ -32,7 +32,6 @@ Mini_CLIP/
 │   └── before_after.py            # Before/After training comparison
 ├── scripts/                       # Utility scripts
 │   ├── run_all_benchmarks.py      # Run all benchmarks at once
-│   └── clean_dataset.py           # Dataset preprocessing
 ├── train.py                       # Training script
 ├── requirements.txt               # Dependencies
 └── README.md
