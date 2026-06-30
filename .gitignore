@@ -1,25 +1,29 @@
-# Bỏ qua cục data nặng
+# Data (quá nặng để push lên GitHub)
 Full_Data/
+images_2*/
 
-# Bỏ qua mấy cục tạ (weights) train xong
+# Model weights
 *.pth
 *.pt
-best_mini_clip.pth
 
-# Mấy file log với file rác lúc chạy code
-benchmark_output.txt
+# Log & output files
 *.log
+*.txt
 
-# Đống cache tự sinh của Python
+# Python cache
 __pycache__/
 *.pyc
 *.pyo
 
-# Môi trường ảo (nếu có)
+# Virtual environments
 venv/
 .venv/
 env/
 
-# File cấu hình của editor (VS Code, PyCharm...)
+# Editor config
 .vscode/
 .idea/
+
+# OS files
+.DS_Store
+Thumbs.db
