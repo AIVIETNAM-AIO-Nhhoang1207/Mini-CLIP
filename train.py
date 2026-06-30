@@ -11,7 +11,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from transformers import DistilBertTokenizer
 
-from data import MiniCLIPDataset
+from Data import MiniCLIPDataset
 from models import ImageEncoder, TextEncoder, MiniCLIP, contrastive_loss
 
 

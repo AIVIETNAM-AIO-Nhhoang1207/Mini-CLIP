@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchvision.models as models
+import torchvision.models as tv_models
 from transformers import DistilBertModel
 
 
@@ -10,7 +10,7 @@ class ImageEncoder(nn.Module):
 
     def __init__(self, embed_dim=512):
         super().__init__()
-        resnet = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
+        resnet = tv_models.resnet18(weights=tv_models.ResNet18_Weights.DEFAULT)
         self.backbone = nn.Sequential(*list(resnet.children())[:-1])
         self.projection = nn.Linear(512, embed_dim)
 

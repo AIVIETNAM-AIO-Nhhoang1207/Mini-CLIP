@@ -6,8 +6,8 @@ import os
 import sys
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["OMP_NUM_THREADS"] = "1"
 
-# Thêm project root vào path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from benchmark.utils import get_device
@@ -85,4 +85,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        import traceback
+        with open("error_dump.txt", "w") as f:
+            traceback.print_exc(file=f)
+        print("Script failed, check error_dump.txt")

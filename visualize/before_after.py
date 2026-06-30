@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 
-from data import MiniCLIPDataset
+from Data import MiniCLIPDataset
 from models import ImageEncoder, TextEncoder, MiniCLIP
 
 

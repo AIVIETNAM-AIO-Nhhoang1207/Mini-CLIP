@@ -12,7 +12,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from transformers import AutoProcessor, AutoModel
 
-from data import MiniCLIPDataset
+from Data import MiniCLIPDataset
 from benchmark.utils import (
     print_recalls, collate_fn_pil, get_device,
     DEFAULT_CSV, DEFAULT_IMG_DIRS,

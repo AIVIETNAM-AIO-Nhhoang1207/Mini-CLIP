@@ -6,6 +6,7 @@ import os
 import sys
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["OMP_NUM_THREADS"] = "1"
 
 import torch
 import torch.nn.functional as F
@@ -13,7 +14,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 from transformers import DistilBertTokenizer
 
-from data import MiniCLIPDataset
+from Data import MiniCLIPDataset
 from models import ImageEncoder, TextEncoder, MiniCLIP
 from benchmark.utils import print_recalls, get_device, DEFAULT_CSV, DEFAULT_IMG_DIRS
 

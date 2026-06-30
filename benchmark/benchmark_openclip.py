@@ -10,9 +10,9 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-import open_clip
+from transformers import CLIPModel, CLIPProcessor
 
-from data import MiniCLIPDataset
+from Data import MiniCLIPDataset
 from benchmark.utils import (
     print_recalls, collate_fn_pil, get_device,
     DEFAULT_CSV, DEFAULT_IMG_DIRS,
@@ -36,12 +36,17 @@ def benchmark_openclip(device=None, csv_path=None, img_dirs=None):
         num_workers=0, collate_fn=collate_fn_pil,
     )
 
-    # Load OpenCLIP
-    print("[OpenCLIP] Loading ViT-B-32 (laion2b_s34b_b79k)...")
-    model, _, preprocess = open_clip.create_model_and_transforms(
-        "ViT-B-32", pretrained="laion2b_s34b_b79k", device=device,
-    )
-    tokenizer = open_clip.get_tokenizer("ViT-B-32")
+    # Load OpenCLIP via Transformers to prevent OpenMP Segfaults
+    print("[OpenCLIP] Loading ViT-B-32 (laion2b_s34b_b79k) via Transformers...")
+    model_id = "laion/CLIP-ViT-B-32-laion2B-s34B-b79K"
+    try:
+        model = CLIPModel.from_pretrained(model_id).to(device)
+        processor = CLIPProcessor.from_pretrained(model_id)
+    except Exception as e:
+        print(f"Could not load {model_id} from HuggingFace. Falling back to default CLIP: openai/clip-vit-base-patch32")
+        model = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
+        processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+        
     model.eval()
 
     all_image_features = []
@@ -50,17 +55,20 @@ def benchmark_openclip(device=None, csv_path=None, img_dirs=None):
     print(f"[OpenCLIP] Encoding {len(dataset)} samples...")
     with torch.no_grad():
         for images, captions in tqdm(dataloader, desc="OpenCLIP"):
-            image_tensors = torch.stack([preprocess(img) for img in images]).to(device)
-            text_tokens = tokenizer(captions).to(device)
+            inputs = processor(text=captions, images=images, return_tensors="pt", padding=True).to(device)
+            
+            img_feat = model.get_image_features(pixel_values=inputs.pixel_values)
+            txt_feat = model.get_text_features(input_ids=inputs.input_ids, attention_mask=inputs.attention_mask)
 
-            img_feat = F.normalize(model.encode_image(image_tensors), p=2, dim=-1)
-            txt_feat = F.normalize(model.encode_text(text_tokens), p=2, dim=-1)
+            img_feat = F.normalize(img_feat, p=2, dim=-1)
+            txt_feat = F.normalize(txt_feat, p=2, dim=-1)
 
             all_image_features.append(img_feat.cpu())
             all_text_features.append(txt_feat.cpu())
 
     all_image_features = torch.cat(all_image_features, dim=0)
     all_text_features = torch.cat(all_text_features, dim=0)
+
 
     similarity_matrix = all_text_features @ all_image_features.T
     results = print_recalls(similarity_matrix, name="OpenCLIP (ViT-B-32, LAION-2B)")

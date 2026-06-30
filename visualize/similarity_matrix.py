@@ -14,7 +14,7 @@ from transformers import DistilBertTokenizer
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from data import MiniCLIPDataset
+from Data import MiniCLIPDataset
 from models import ImageEncoder, TextEncoder, MiniCLIP
 
 
