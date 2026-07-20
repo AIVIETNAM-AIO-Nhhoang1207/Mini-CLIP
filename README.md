@@ -2,154 +2,145 @@
 
 # Mini-CLIP
 
-### A lightweight CLIP-style model for fashion image–text retrieval
+### Mô hình gọn nhẹ theo kiến trúc CLIP cho tác vụ truy vấn ảnh–văn bản trong thời trang
 
 [![Python](https://img.shields.io/badge/Python-3.9%2B-blue)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-orange)](https://pytorch.org/)
 [![Transformers](https://img.shields.io/badge/HuggingFace-Transformers-yellow)](https://huggingface.co/docs/transformers)
-[![License](https://img.shields.io/badge/License-Educational-lightgrey)](#license)
+[![License](https://img.shields.io/badge/License-Educational-lightgrey)](#giấy-phép)
 
-Mini-CLIP is a compact implementation inspired by CLIP, designed for learning and experimenting with multimodal image–text retrieval on fashion data.
+Mini-CLIP là một triển khai thu nhỏ lấy cảm hứng từ CLIP, được thiết kế cho việc học tập và thử nghiệm truy vấn đa thức ảnh–văn bản trên dữ liệu thời trang.
 
-[Demo Video](https://www.youtube.com/watch?v=unUhRajTKJU) •
+[Video Demo](https://www.youtube.com/watch?v=unUhRajTKJU) •
 [Model Checkpoint](./best_mini_clip.pth) •
-[Source Code](https://github.com/AIVIETNAM-AIO-Nhhoang1207/Mini-CLIP)
+[Mã nguồn](https://github.com/AIVIETNAM-AIO-Nhhoang1207/Mini-CLIP)
 
 </div>
 
 ---
 
-## Overview
+## Tổng quan
 
-Mini-CLIP learns a shared embedding space for images and text.
+Mini-CLIP học một không gian nhúng chung (shared embedding space) cho cả hình ảnh và văn bản.
 
-During training, matching image–caption pairs are pulled closer together, while non-matching pairs are pushed farther apart. After training, the model can perform two retrieval tasks:
+Trong quá trình huấn luyện, các cặp ảnh–chú thích khớp nhau sẽ được kéo lại gần nhau, trong khi các cặp không khớp sẽ bị đẩy ra xa. Sau khi huấn luyện, mô hình có thể thực hiện hai tác vụ truy vấn:
 
-* **Text-to-Image Retrieval:** given a caption, retrieve the most relevant images.
-* **Image-to-Text Retrieval:** given an image, retrieve the most relevant captions.
+* **Truy vấn Văn bản sang Ảnh (Text-to-Image Retrieval):** cho trước một chú thích, truy xuất các hình ảnh liên quan nhất.
+* **Truy vấn Ảnh sang Văn bản (Image-to-Text Retrieval):** cho trước một hình ảnh, truy xuất các chú thích liên quan nhất.
 
-The project focuses on implementing the essential ideas behind CLIP using smaller and more accessible pretrained encoders.
+Dự án tập trung vào việc triển khai các ý tưởng cốt lõi đằng sau CLIP bằng cách sử dụng các bộ mã hóa (encoders) tiền huấn luyện nhỏ gọn và dễ tiếp cận hơn.
 
 ---
 
 ## Demo
 
-A demonstration of the project is available on YouTube:
+Video minh họa cho dự án có sẵn trên YouTube:
 
 [![Mini-CLIP Demo](https://img.youtube.com/vi/unUhRajTKJU/maxresdefault.jpg)](https://www.youtube.com/watch?v=unUhRajTKJU)
 
 ---
 
-## Model Architecture
+## Kiến trúc mô hình
 
-Mini-CLIP contains two independent encoders:
+Mini-CLIP chứa hai bộ mã hóa độc lập:
 
-| Component          | Architecture               | Output dimension |
-| ------------------ | -------------------------- | ---------------: |
-| Image Encoder      | Pretrained ResNet-18       |              512 |
-| Text Encoder       | Pretrained DistilBERT      |              512 |
-| Similarity         | Cosine similarity          |                — |
-| Training objective | Symmetric contrastive loss |                — |
+| Thành phần         | Kiến trúc                  | Kích thước đầu ra |
+| ------------------ | -------------------------- | ----------------: |
+| Bộ mã hóa Ảnh      | ResNet-18 tiền huấn luyện  |               512 |
+| Bộ mã hóa Văn bản  | DistilBERT tiền huấn luyện |               512 |
+| Độ tương đồng      | Cosine similarity          |                 — |
+| Mục tiêu huấn luyện| Symmetric contrastive loss |                 — |
 
-### Image Encoder
+### Bộ mã hóa Ảnh (Image Encoder)
 
-The image encoder uses a pretrained ResNet-18 backbone.
+Bộ mã hóa ảnh sử dụng backbone ResNet-18 tiền huấn luyện.
 
-The original classification layer is removed, and the extracted image representation is projected into a 512-dimensional embedding space.
+Lớp phân loại gốc bị loại bỏ, và biểu diễn hình ảnh thu được được chiếu vào một không gian nhúng 512 chiều.
 
 ```text
-Input image
+Ảnh đầu vào
     │
     ▼
-Pretrained ResNet-18
+ResNet-18 tiền huấn luyện
     │
     ▼
-Visual features
+Đặc trưng hình ảnh
     │
     ▼
-Linear projection
+Lớp chiếu tuyến tính (Linear projection)
     │
     ▼
-512-dimensional image embedding
+Vector nhúng ảnh 512 chiều
 ```
 
-### Text Encoder
+### Bộ mã hóa Văn bản (Text Encoder)
 
-The text encoder uses `distilbert-base-uncased`.
+Bộ mã hóa văn bản sử dụng `distilbert-base-uncased`.
 
-The representation of the first output token is passed through a linear projection layer to obtain a 512-dimensional text embedding.
+Biểu diễn của token đầu ra đầu tiên (CLS token) được đưa qua một lớp chiếu tuyến tính để thu được vector nhúng văn bản 512 chiều.
 
 ```text
-Input caption
+Chú thích đầu vào
     │
     ▼
 DistilBERT tokenizer
     │
     ▼
-Pretrained DistilBERT
+DistilBERT tiền huấn luyện
     │
     ▼
-Text representation
+Biểu diễn văn bản
     │
     ▼
-Linear projection
+Lớp chiếu tuyến tính (Linear projection)
     │
     ▼
-512-dimensional text embedding
+Vector nhúng văn bản 512 chiều
 ```
 
-### Shared Embedding Space
+### Không gian nhúng chung (Shared Embedding Space)
 
-Both image and text embeddings are L2-normalized before their similarity is calculated.
+Cả vector nhúng ảnh và văn bản đều được chuẩn hóa L2 (L2-normalized) trước khi tính toán độ tương đồng.
 
 ```text
-Image ──► Image Encoder ──► Image Embedding ──┐
-                                               ├──► Similarity Matrix
-Text  ──► Text Encoder  ──► Text Embedding  ──┘
+Ảnh     ──► Bộ mã hóa Ảnh     ──► Nhúng Ảnh     ──┐
+                                                 ├──► Ma trận tương đồng (Similarity Matrix)
+Văn bản ──► Bộ mã hóa Văn bản ──► Nhúng Văn bản ──┘
 ```
 
 ---
 
-## Contrastive Learning Objective
+## Hàm mất mát tương phản (Contrastive Learning Objective)
 
-For a batch containing matching image–caption pairs:
+Đối với một batch chứa các cặp ảnh–chú thích tương ứng:
 
-[
-(I_1,T_1), (I_2,T_2), \ldots, (I_N,T_N),
-]
+$$ (I_1,T_1), (I_2,T_2), \ldots, (I_N,T_N) $$
 
-the model computes the similarity between every image embedding and every text embedding.
+mô hình tính toán độ tương đồng giữa từng vector nhúng ảnh và từng vector nhúng văn bản.
 
-The diagonal entries of the similarity matrix represent matching pairs. The remaining entries represent non-matching pairs.
+Các phần tử trên đường chéo chính của ma trận tương đồng đại diện cho các cặp khớp nhau. Các phần tử còn lại đại diện cho các cặp không khớp.
 
-Mini-CLIP applies cross-entropy loss in both retrieval directions:
+Mini-CLIP áp dụng hàm mất mát Cross-Entropy theo cả hai chiều truy vấn:
 
-[
-\mathcal{L}
-===========
+$$ \mathcal{L} = rac{\mathcal{L}_{image
+ightarrow text} + \mathcal{L}_{text
+ightarrow image}}{2} $$
 
-\frac{
-\mathcal{L}*{image\rightarrow text}
-+
-\mathcal{L}*{text\rightarrow image}
-}{2}.
-]
-
-A learnable temperature parameter controls the scale of the similarity logits.
+Một tham số nhiệt độ (temperature parameter) có thể học được được dùng để điều chỉnh quy mô của logits tương đồng.
 
 ---
 
-## Repository Structure
+## Cấu trúc thư mục
 
 ```text
 Mini-CLIP/
-├── Data.py                 # Dataset for loading images and captions
-├── models.py               # ResNet-18 and DistilBERT encoders
-├── train.py                # Training, validation and early stopping
-├── benchmark.py            # Recall@K evaluation
-├── visualize.py            # Similarity visualization
-├── visualize_compare.py    # Comparison visualization
-├── best_mini_clip.pth      # Trained model checkpoint
+├── Data.py                 # Dataset để tải hình ảnh và chú thích
+├── models.py               # Các bộ mã hóa ResNet-18 và DistilBERT
+├── train.py                # Huấn luyện, đánh giá val và dừng sớm (early stopping)
+├── benchmark.py            # Đánh giá chỉ số Recall@K
+├── visualize.py            # Trực quan hóa độ tương đồng
+├── visualize_compare.py    # Trực quan hóa so sánh
+├── best_mini_clip.pth      # Checkpoint mô hình đã huấn luyện
 ├── .gitignore
 ├── .gitattributes
 └── README.md
@@ -157,9 +148,9 @@ Mini-CLIP/
 
 ---
 
-## Dataset Format
+## Định dạng tập dữ liệu
 
-The project expects CSV files containing at least two columns:
+Dự án yêu cầu các file CSV chứa tối thiểu hai cột:
 
 ```csv
 image_filename,caption
@@ -168,16 +159,16 @@ image_0002.jpg,a red floral summer dress
 image_0003.jpg,white running shoes
 ```
 
-Required columns:
+Các cột bắt buộc:
 
-| Column           | Description                               |
-| ---------------- | ----------------------------------------- |
-| `image_filename` | Name of the corresponding image file      |
-| `caption`        | Natural-language description of the image |
+| Cột              | Mô tả                                       |
+| ---------------- | ------------------------------------------- |
+| `image_filename` | Tên của file ảnh tương ứng                  |
+| `caption`        | Mô tả bằng ngôn ngữ tự nhiên của hình ảnh  |
 
-The dataset loader can search for images across one or multiple image directories.
+Bộ tải dữ liệu (Dataset loader) có thể tìm kiếm hình ảnh trên một hoặc nhiều thư mục chứa ảnh.
 
-Suggested dataset structure:
+Cấu trúc thư mục dữ liệu gợi ý:
 
 ```text
 Full_Data/
@@ -192,46 +183,46 @@ Full_Data/
         └── test.csv
 ```
 
-> The data paths are currently configured directly inside `train.py`, `benchmark.py`, `visualize.py`, and `visualize_compare.py`. Update them to match your local dataset location before running the scripts.
+> Các đường dẫn dữ liệu hiện đang được cấu hình trực tiếp bên trong `train.py`, `benchmark.py`, `visualize.py` và `visualize_compare.py`. Hãy cập nhật chúng cho phù hợp với vị trí dữ liệu trên máy bạn trước khi chạy các script.
 
 ---
 
-## Installation
+## Cài đặt
 
-### 1. Clone the repository
+### 1. Clone repository
 
 ```bash
 git clone https://github.com/AIVIETNAM-AIO-Nhhoang1207/Mini-CLIP.git
 cd Mini-CLIP
 ```
 
-### 2. Create a virtual environment
+### 2. Tạo môi trường ảo
 
-Using `venv`:
+Sử dụng `venv`:
 
 ```bash
 python -m venv .venv
 ```
 
-Activate the environment on Windows:
+Kích hoạt môi trường trên Windows:
 
 ```bash
 .venv\Scripts\activate
 ```
 
-Activate the environment on Linux or macOS:
+Kích hoạt môi trường trên Linux hoặc macOS:
 
 ```bash
 source .venv/bin/activate
 ```
 
-### 3. Install dependencies
+### 3. Cài đặt các thư viện phụ thuộc
 
 ```bash
 pip install torch torchvision transformers pandas pillow tqdm matplotlib seaborn
 ```
 
-Main dependencies:
+Các thư viện chính:
 
 * Python 3.9+
 * PyTorch
@@ -245,11 +236,11 @@ Main dependencies:
 
 ---
 
-## Configuration
+## Cấu hình
 
-Before training or evaluation, update the dataset paths inside the Python scripts.
+Trước khi huấn luyện hoặc đánh giá, hãy cập nhật đường dẫn tập dữ liệu bên trong các script Python.
 
-Example configuration:
+Ví dụ cấu hình:
 
 ```python
 train_csv_path = "path/to/train.csv"
@@ -261,7 +252,7 @@ img_dirs = [
 ]
 ```
 
-The project automatically uses CUDA when a compatible GPU is available:
+Dự án tự động sử dụng CUDA khi có GPU tương thích:
 
 ```python
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -269,133 +260,123 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 ---
 
-## Training
+## Huấn luyện
 
-Run:
+Chạy lệnh:
 
 ```bash
 python train.py
 ```
 
-The default training configuration uses:
+Cấu hình huấn luyện mặc định sử dụng:
 
-| Parameter                      |  Value |
-| ------------------------------ | -----: |
-| Batch size                     |     64 |
-| Maximum epochs                 |    100 |
-| Embedding dimension            |    512 |
-| Backbone learning rate         | `1e-5` |
-| Projection learning rate       | `1e-3` |
-| Early-stopping patience        |      5 |
-| Minimum validation improvement |  0.005 |
+| Tham số                        | Trị số  |
+| ------------------------------ | ------: |
+| Kích thước batch (Batch size)  |      64 |
+| Số epoch tối đa                |     100 |
+| Kích thước không gian nhúng    |     512 |
+| Tốc độ học của backbone        |  `1e-5` |
+| Tốc độ học của lớp chiếu       |  `1e-3` |
+| Kiên nhẫn dừng sớm (Patience)  |       5 |
+| Độ cải thiện val tối thiểu     |   0.005 |
 
-The image and text backbones use smaller learning rates than the projection layers and learnable logit scale.
+Backbone hình ảnh và văn bản sử dụng tốc độ học nhỏ hơn so với các lớp chiếu và tham số logit scale có thể học.
 
-The best model is saved as:
+Mô hình tốt nhất sẽ được lưu tại:
 
 ```text
 best_mini_clip.pth
 ```
 
-Training stops early when the validation loss does not improve sufficiently for five consecutive epochs.
+Quá trình huấn luyện sẽ dừng sớm khi validation loss không cải thiện đủ tốt trong 5 epoch liên tiếp.
 
 ---
 
-## Evaluation
+## Đánh giá
 
-Run:
+Chạy lệnh:
 
 ```bash
 python benchmark.py
 ```
 
-The benchmark script:
+Script đánh giá (benchmark) sẽ:
 
-1. Loads `best_mini_clip.pth`.
-2. Encodes all images and captions in the test set.
-3. Normalizes the embeddings.
-4. Computes the image–text similarity matrix.
-5. Evaluates retrieval performance using Recall@K.
+1. Tải checkpoint `best_mini_clip.pth`.
+2. Mã hóa toàn bộ hình ảnh và chú thích trong tập test.
+3. Chuẩn hóa các vector nhúng.
+4. Tính toán ma trận tương đồng ảnh–văn bản.
+5. Đánh giá hiệu năng truy vấn bằng chỉ số Recall@K.
 
 ---
 
-## Evaluation Metrics
+## Chỉ số đánh giá
 
-The project evaluates retrieval in both directions.
+Dự án đánh giá khả năng truy vấn theo cả hai chiều.
 
-### Text-to-Image Retrieval
+### Truy vấn Văn bản sang Ảnh (Text-to-Image Retrieval)
 
-A caption is used as the query, and the model retrieves the most similar images.
+Một câu chú thích được dùng làm câu truy vấn (query), và mô hình sẽ truy xuất các hình ảnh giống nhất.
 
 * T2I Recall@1
 * T2I Recall@5
 * T2I Recall@10
 
-### Image-to-Text Retrieval
+### Truy vấn Ảnh sang Văn bản (Image-to-Text Retrieval)
 
-An image is used as the query, and the model retrieves the most similar captions.
+Một hình ảnh được dùng làm câu truy vấn, và mô hình sẽ truy xuất các chú thích giống nhất.
 
 * I2T Recall@1
 * I2T Recall@5
 * I2T Recall@10
 
-Recall@K is calculated as:
+Công thức tính Recall@K:
 
-[
-Recall@K
-========
+$$ Recall@K = rac{	ext{số lượng truy vấn có kết quả đúng nằm trong top }K}{	ext{tổng số lượng truy vấn}} 	imes 100\% $$
 
-\frac{
-\text{number of queries whose correct result appears in top }K
-}{
-\text{total number of queries}
-}
-\times 100%.
-]
-
-A higher Recall@K indicates better retrieval performance.
+Chỉ số Recall@K càng cao thể hiện hiệu năng truy vấn càng tốt.
 
 ---
 
-## Visualization
+## Trực quan hóa
 
-### Similarity Visualization
+### Trực quan hóa độ tương đồng
 
-Run:
+Chạy lệnh:
 
 ```bash
 python visualize.py
 ```
 
-This script visualizes image–text similarity scores and helps inspect whether matching image–caption pairs receive higher similarity than non-matching pairs.
+Script này trực quan hóa điểm số tương đồng giữa ảnh và văn bản, giúp kiểm tra xem các cặp ảnh–chú thích khớp nhau có nhận được điểm tương đồng cao hơn các cặp không khớp hay không.
 
-### Model Comparison
+### So sánh mô hình
 
-Run:
+Chạy lệnh:
 
 ```bash
 python visualize_compare.py
 ```
 
-This script provides an additional visual comparison of retrieval or similarity results.
+Script này cung cấp thêm hình ảnh trực quan so sánh kết quả truy vấn hoặc độ tương đồng.
 
-Before running the visualization scripts, verify that:
+Trước khi chạy các script trực quan hóa, hãy đảm bảo rằng:
 
-* the dataset paths are correct;
-* `best_mini_clip.pth` exists;
-* all required dependencies are installed.
+* Đường dẫn tập dữ liệu đã chính xác;
+* File `best_mini_clip.pth` đã tồn tại;
+* Tất cả các thư viện phụ thuộc đã được cài đặt.
 
 ---
 
-## Using the Pretrained Checkpoint
+## Sử dụng Checkpoint đã tiền huấn luyện
 
-The repository already contains the trained checkpoint:
+Repository đã đi kèm sẵn checkpoint đã huấn luyện:
 
 ```text
 best_mini_clip.pth
 ```
 
-It can be loaded as follows:
+Bạn có thể tải checkpoint này như sau:
 
 ```python
 import torch
@@ -423,111 +404,111 @@ model.load_state_dict(state_dict)
 model.eval()
 ```
 
-The architecture used to load the checkpoint must match the architecture used during training.
+Kiến trúc mô hình được dùng để tải checkpoint phải trùng khớp với kiến trúc đã sử dụng trong quá trình huấn luyện.
 
 ---
 
-## Project Workflow
+## Quy trình hoạt động của dự án
 
 ```text
-Fashion images and captions
+Hình ảnh thời trang và chú thích
             │
             ▼
-       Dataset loader
+     Dataset loader
             │
             ▼
-   Image and text encoders
+Bộ mã hóa ảnh và văn bản
             │
             ▼
-   Normalized embeddings
+ Vector nhúng chuẩn hóa
             │
             ▼
- Image–text similarity matrix
+Ma trận tương đồng ảnh–văn bản
             │
             ▼
-  Symmetric contrastive loss
+Symmetric contrastive loss
             │
             ▼
-     Trained Mini-CLIP
+   Mini-CLIP đã huấn luyện
             │
             ▼
- Text-to-image / Image-to-text retrieval
+Truy vấn Văn bản-sang-Ảnh / Ảnh-sang-Văn bản
 ```
 
 ---
 
-## Current Features
+## Các tính năng hiện có
 
-* Pretrained ResNet-18 image encoder
-* Pretrained DistilBERT text encoder
-* Shared 512-dimensional embedding space
-* Learnable similarity temperature
-* Symmetric image–text contrastive loss
-* Validation-based early stopping
-* Automatic CPU/CUDA device selection
-* Text-to-image retrieval evaluation
-* Image-to-text retrieval evaluation
-* Recall@1, Recall@5 and Recall@10
-* Similarity visualization
-* Included pretrained checkpoint
-
----
-
-## Limitations
-
-The current implementation is intended primarily for learning and experimentation.
-
-Current limitations include:
-
-* dataset paths are hard-coded inside the scripts;
-* no command-line configuration is currently provided;
-* the model is specialized toward the training dataset;
-* retrieval assumes aligned image–caption pairs in the evaluation set;
-* no standalone interactive search application is included;
-* the repository does not yet provide a pinned `requirements.txt`;
-* training can require significant GPU memory because both pretrained encoders are fine-tuned.
+* Bộ mã hóa ảnh ResNet-18 tiền huấn luyện
+* Bộ mã hóa văn bản DistilBERT tiền huấn luyện
+* Không gian nhúng chung 512 chiều
+* Tham số nhiệt độ tương đồng có thể học
+* Hàm mất mát tương phản đối xứng ảnh–văn bản
+* Dừng sớm dựa trên tập validation
+* Tự động chọn thiết bị CPU/CUDA
+* Đánh giá truy vấn Văn bản-sang-Ảnh
+* Đánh giá truy vấn Ảnh-sang-Văn bản
+* Các chỉ số Recall@1, Recall@5 và Recall@10
+* Trực quan hóa độ tương đồng
+* Đi kèm checkpoint đã huấn luyện sẵn
 
 ---
 
-## Possible Improvements
+## Hạn chế
 
-Future development may include:
+Triển khai hiện tại chủ yếu phục vụ cho mục đích học tập và thử nghiệm.
 
-* moving configuration into command-line arguments or YAML files;
-* adding a `requirements.txt`;
-* adding inference scripts for custom images and captions;
-* creating a Streamlit or Gradio retrieval demo;
-* comparing Mini-CLIP with pretrained CLIP and SigLIP models;
-* supporting alternative image and text encoders;
-* logging experiments with TensorBoard or Weights & Biases;
-* reporting model size, inference time and GPU memory usage;
-* adding Mean Reciprocal Rank and median rank;
-* supporting multiple captions per image;
-* adding unit tests and continuous integration.
+Các hạn chế hiện tại bao gồm:
+
+* Đường dẫn dữ liệu bị hard-code bên trong các script;
+* Chưa hỗ trợ cấu hình qua dòng lệnh (command-line);
+* Mô hình bị chuyên biệt hóa theo tập dữ liệu huấn luyện;
+* Quá trình truy vấn giả định các cặp ảnh–chú thích đã được dóng hàng trong tập đánh giá;
+* Chưa đi kèm ứng dụng tìm kiếm tương tác độc lập;
+* Repository chưa cung cấp file `requirements.txt` cố định phiên bản;
+* Quá trình huấn luyện có thể tốn nhiều bộ nhớ GPU do cả hai bộ mã hóa đều được tinh chỉnh (fine-tune).
 
 ---
 
-## Educational Purpose
+## Hướng phát triển tiếp theo
 
-This project was developed as an educational implementation of multimodal contrastive learning.
+Các cải tiến trong tương lai có thể bao gồm:
 
-It demonstrates:
-
-* how pretrained vision and language models can be combined;
-* how images and text can be mapped into a common vector space;
-* how contrastive learning aligns matching multimodal samples;
-* how cross-modal retrieval systems are evaluated.
-
-The project is inspired by the core idea of CLIP but is not an official OpenAI implementation.
+* Chuyển cấu hình sang các tham số dòng lệnh hoặc file YAML;
+* Bổ sung file `requirements.txt`;
+* Thêm các script suy luận (inference) cho ảnh và chú thích tùy chỉnh;
+* Tạo ứng dụng truy vấn demo bằng Streamlit hoặc Gradio;
+* So sánh Mini-CLIP với các mô hình CLIP và SigLIP tiền huấn luyện gốc;
+* Hỗ trợ các bộ mã hóa ảnh và văn bản thay thế khác;
+* Ghi lại nhật ký thực nghiệm (logging) bằng TensorBoard hoặc Weights & Biases;
+* Báo cáo kích thước mô hình, thời gian suy luận và dung lượng GPU tiêu thụ;
+* Bổ sung chỉ số Mean Reciprocal Rank (MRR) và Median Rank;
+* Hỗ trợ nhiều chú thích cho mỗi hình ảnh;
+* Bổ sung unit test và tích hợp liên tục (CI).
 
 ---
 
-## References
+## Mục đích giáo dục
+
+Dự án này được phát triển như một bài triển khai học tập về học tương phản đa thức (multimodal contrastive learning).
+
+Dự án minh họa:
+
+* Cách kết hợp các mô hình thị giác và ngôn ngữ tiền huấn luyện;
+* Cách ánh xạ hình ảnh và văn bản vào một không gian vector chung;
+* Cách học tương phản căn chỉnh các mẫu đa thức tương ứng;
+* Cách đánh giá các hệ thống truy vấn đa phương thức.
+
+Dự án được lấy cảm hứng từ ý tưởng cốt lõi của CLIP nhưng không phải là triển khai chính thức từ OpenAI.
+
+---
+
+## Tài liệu tham khảo
 
 * Radford et al., *Learning Transferable Visual Models From Natural Language Supervision*, 2021.
-* PyTorch documentation.
-* Torchvision ResNet documentation.
-* Hugging Face Transformers documentation.
+* Tài liệu PyTorch.
+* Tài liệu Torchvision ResNet.
+* Tài liệu Hugging Face Transformers.
 * DistilBERT: *DistilBERT, a distilled version of BERT*.
 
 ---
@@ -535,21 +516,14 @@ The project is inspired by the core idea of CLIP but is not an official OpenAI i
 **Nguyễn Huy Hoàng**
 
 * GitHub: [AIVIETNAM-AIO-Nhhoang1207](https://github.com/AIVIETNAM-AIO-Nhhoang1207)
-* Project demo: [YouTube](https://www.youtube.com/watch?v=unUhRajTKJU)
+* Demo dự án: [YouTube](https://www.youtube.com/watch?v=unUhRajTKJU)
 
 ---
-
-## License
-
-This repository is provided for educational and research purposes.
-
-Before using the project or dataset commercially, verify the licenses of the dataset, pretrained models and external dependencies.
-
+Repository này được cung cấp cho mục đích học tập và nghiên cứu.
 ---
 
 <div align="center">
 
-If this project is useful, consider giving the repository a star.
+Nếu dự án này hữu ích, hãy cân nhắc tặng repository một ngôi sao (star).
 
 </div>
-
